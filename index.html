@@ -1,611 +1,254 @@
 from pathlib import Path
+p=Path("/mnt/data/index.html")
+s=p.read_text(encoding="utf-8")
 
-html = r'''<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The Pitt: Exposure — An Interactive Episode</title>
-<style>
-:root{
-  --bg:#e9eceb;
-  --paper:#f7f7f3;
-  --ink:#1e2528;
-  --muted:#667176;
-  --line:#c8cfcd;
-  --panel:#eef1ef;
-  --strong:#26383d;
-  --alert:#775d34;
-  --danger:#694c4c;
-  --shadow:0 14px 45px rgba(22,31,34,.12);
+# Add diagnostic styling before media query.
+needle='''@media(max-width:600px){'''
+insert=r'''
+.dx-panel{
+  margin:24px 0;padding:18px;border:1px solid var(--line);background:#f2f4f2;
+  font-family:Arial,Helvetica,sans-serif
 }
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--ink);
-  font-family:Georgia, "Times New Roman", serif;
-  line-height:1.62;
+.dx-panel h3{margin:0 0 8px;font-size:1rem}
+.dx-current{font-weight:800;color:var(--strong)}
+.investigate{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:15px 0 5px
 }
-button,input{font:inherit}
-button{cursor:pointer}
-.topbar{
-  position:sticky; top:0; z-index:20;
-  display:flex; align-items:center; justify-content:space-between;
-  gap:16px; padding:11px 18px;
-  background:rgba(247,247,243,.96);
-  border-bottom:1px solid var(--line);
-  backdrop-filter:blur(8px);
-  font-family:Arial,Helvetica,sans-serif;
+.investigate button{
+  text-align:left;border:1px solid #aeb8b5;background:white;padding:14px;border-radius:4px;
+  font-family:Arial,Helvetica,sans-serif
 }
-.brand{font-weight:800; letter-spacing:.08em; font-size:.86rem}
-.subbrand{font-weight:400;color:var(--muted);letter-spacing:.03em;margin-left:8px}
-.utility{display:flex;gap:8px}
-.iconbtn{
-  border:1px solid var(--line); background:white; color:var(--strong);
-  padding:7px 10px; border-radius:4px; font-size:.82rem; font-weight:700;
+.investigate button:hover{border-color:var(--strong)}
+.clue{
+  margin:20px 0;padding:17px 18px;background:white;border:1px solid var(--line);
+  border-left:4px solid var(--strong)
 }
-.wrap{max-width:900px;margin:28px auto 80px;padding:0 18px}
-.card{
-  background:var(--paper); border:1px solid var(--line);
-  box-shadow:var(--shadow); padding:clamp(25px,5vw,58px);
+.clue h3{font-family:Arial,Helvetica,sans-serif;margin:0 0 8px;font-size:1rem}
+.labgrid{
+  display:grid;grid-template-columns:1fr 1fr;gap:7px 18px;font-family:Arial,Helvetica,sans-serif;
+  font-size:.92rem
 }
-.eyebrow,.timestamp,.location,.character,.artifact-label,.result-kicker{
-  font-family:Arial,Helvetica,sans-serif;
-  text-transform:uppercase; letter-spacing:.11em;
+.labgrid div{border-bottom:1px dotted #c8cfcd;padding:5px 0}
+.term{border-bottom:1px dotted var(--muted);cursor:help}
+.mystery-banner{
+  margin:25px 0;padding:20px;border:1px solid var(--strong);background:#fff;
+  font-family:Arial,Helvetica,sans-serif
 }
-.eyebrow{font-size:.73rem;color:var(--muted);font-weight:700}
-h1,h2,h3{line-height:1.14;margin-top:0}
-h1{font-family:Arial,Helvetica,sans-serif;font-size:clamp(2rem,6vw,4.3rem);letter-spacing:-.045em;margin-bottom:8px}
-h2{font-size:clamp(1.45rem,4vw,2.25rem);margin-bottom:20px}
-h3{font-size:1.15rem;margin:28px 0 10px}
-.deck{font-size:1.15rem;color:#465155;max-width:650px}
-.disclaimer{font-size:.86rem;color:var(--muted);border-top:1px solid var(--line);padding-top:15px;margin-top:28px}
-.timestamp{font-size:1.75rem;font-weight:800;color:var(--strong);margin-bottom:2px}
-.location{font-size:.72rem;color:var(--muted);margin-bottom:26px}
-.character{
-  display:inline-block;font-size:.68rem;font-weight:800;color:var(--strong);
-  border-bottom:1px solid var(--line);padding-bottom:3px;margin-bottom:8px
-}
-.character span{font-weight:400;color:var(--muted);letter-spacing:.05em}
-p{margin:0 0 1.05em}
-.dialogue{margin-left:1.25rem}
-.prompt{
-  margin-top:30px;padding-top:20px;border-top:1px solid var(--line);
-  font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:1rem
-}
-.choices{display:grid;gap:10px;margin-top:14px}
-.choice{
-  width:100%;text-align:left;border:1px solid #aeb8b5;background:#fff;
-  padding:14px 16px;border-radius:4px;color:var(--ink);
-  transition:.12s ease;font-family:Arial,Helvetica,sans-serif;line-height:1.35
-}
-.choice:hover,.choice:focus{border-color:var(--strong);transform:translateY(-1px);outline:none}
-.choice b{display:inline-block;width:25px;color:var(--strong)}
-.artifact{
-  margin:24px 0;padding:18px;border:1px solid var(--line);
-  background:#fff;font-family:Arial,Helvetica,sans-serif
-}
-.artifact-label{font-size:.66rem;color:var(--muted);font-weight:800;margin-bottom:12px}
-.post{font-size:.95rem}
-.post strong{display:block;margin-bottom:10px}
-.comments{margin-top:14px;padding-top:12px;border-top:1px solid #ddd;color:#4f585b;font-size:.9rem}
-.diagram{
-  text-align:center;font-family:"Courier New",monospace;white-space:pre-wrap;
-  background:#f0f1ed;padding:18px;border:1px solid var(--line);margin:20px 0
-}
-.notice{border-left:4px solid var(--alert)}
-.reveal{border-left:4px solid var(--danger)}
-.continue{
-  display:inline-block;margin-top:18px;border:1px solid var(--strong);
-  background:var(--strong);color:white;padding:11px 17px;border-radius:4px;
-  font-family:Arial,Helvetica,sans-serif;font-weight:700
-}
-.small{font-size:.88rem;color:var(--muted)}
-.hidden{display:none!important}
-.fade{animation:fade .28s ease}
-@keyframes fade{from{opacity:.25;transform:translateY(4px)}to{opacity:1;transform:none}}
-.drawer{
-  position:fixed;z-index:40;right:0;top:0;height:100%;width:min(430px,92vw);
-  background:var(--paper);border-left:1px solid var(--line);
-  box-shadow:-15px 0 40px rgba(20,30,32,.15);padding:22px;
-  transform:translateX(105%);transition:.22s ease;overflow:auto;
-}
-.drawer.open{transform:none}
-.drawer-head{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:12px}
-.drawer h2{font-family:Arial,Helvetica,sans-serif;font-size:1.25rem;margin:0}
-.note-section{margin-top:24px}
-.note-section h3{
-  font-family:Arial,Helvetica,sans-serif;font-size:.72rem;letter-spacing:.11em;
-  text-transform:uppercase;color:var(--muted);margin-bottom:8px
-}
-.note-section ul{margin:0;padding-left:20px}
-.note-section li{margin-bottom:8px}
-.scrim{position:fixed;inset:0;background:rgba(0,0,0,.22);z-index:30}
-.result{
-  border-top:5px solid var(--strong);padding-top:26px
-}
-.result-kicker{font-size:.7rem;color:var(--muted);font-weight:800}
-.result h2{font-family:Arial,Helvetica,sans-serif;font-size:2rem}
-.profile{
-  margin:24px 0;padding:20px;background:#fff;border:1px solid var(--line)
-}
-.profile h3{font-family:Arial,Helvetica,sans-serif;margin:0 0 8px;font-size:1.35rem}
-.choice-log{font-size:.94rem}
-.choice-log li{margin-bottom:8px}
-.debrief{
-  margin-top:35px;padding-top:25px;border-top:1px solid var(--line)
-}
-.debrief h2{font-family:Arial,Helvetica,sans-serif}
-.reset{
-  border:0;background:none;text-decoration:underline;color:var(--muted);padding:0
-}
-@media(max-width:600px){
-  .topbar{padding:9px 10px}
-  .subbrand{display:none}
-  .wrap{margin-top:12px;padding:0 8px}
-  .card{padding:25px 20px}
-  .timestamp{font-size:1.45rem}
-}
-@media(prefers-reduced-motion:reduce){
-  *{scroll-behavior:auto!important;animation:none!important;transition:none!important}
-}
-</style>
-</head>
-<body>
-<header class="topbar">
-  <div class="brand">THE PITT: EXPOSURE <span class="subbrand">AN INTERACTIVE EPISODE</span></div>
-  <div class="utility">
-    <button class="iconbtn" id="notesBtn" type="button">CASE NOTES</button>
-  </div>
-</header>
+.mystery-banner strong{display:block;font-size:1.08rem;margin-bottom:5px}
+@media(max-width:600px){.investigate,.labgrid{grid-template-columns:1fr}}
+'''
+s=s.replace(needle,insert+needle,1)
 
-<div id="scrim" class="scrim hidden"></div>
-<aside id="drawer" class="drawer" aria-hidden="true">
-  <div class="drawer-head">
-    <h2>Case Notes</h2>
-    <button class="iconbtn" id="closeNotes" type="button">CLOSE</button>
-  </div>
-  <p class="small">These notes reflect what is currently established, reported, or still uncertain in your version of the case.</p>
-  <div class="note-section"><h3>Known</h3><ul id="knownNotes"></ul></div>
-  <div class="note-section"><h3>Reported</h3><ul id="reportedNotes"></ul></div>
-  <div class="note-section"><h3>Unconfirmed</h3><ul id="unconfirmedNotes"></ul></div>
-</aside>
+# Extend state.
+s=s.replace('''  finalPOV:null,
+  notes:{''','''  finalPOV:null,
+  diagnosis:"Not enough information yet",
+  dxHistory:[],
+  investigations:[],
+  notes:{''',1)
 
-<main class="wrap">
-  <section id="game" class="card fade" aria-live="polite"></section>
-</main>
+# Add current diagnosis section to drawer HTML.
+s=s.replace('''<p class="small">These notes reflect what is currently established, reported, or still uncertain in your version of the case.</p>
+  <div class="note-section"><h3>Known</h3>''','''<p class="small">These notes reflect what is currently established, reported, or still uncertain in your version of the case.</p>
+  <div class="note-section"><h3>Working diagnosis</h3><div id="dxNote" class="dx-current">Not enough information yet</div></div>
+  <div class="note-section"><h3>Known</h3>''',1)
 
-<script>
-const frames = ["ORIGIN","BOUNDARY","AUTHORITY","BLAME","CARE","WITNESS"];
-const state = {
-  scores:Object.fromEntries(frames.map(x=>[x,0])),
-  choices:[],
-  finalPOV:null,
-  notes:{
-    known:["Evan and Marcus are roommates.","Both have fever, severe headache, and vomiting."],
-    reported:[],
-    unconfirmed:["The two illnesses have a common source."]
-  }
-};
-
-const scenes = {
-intro:{
+# Insert first working diagnosis after s4 branch convergence, before s5.
+old='''s5:{
+time:"8:53 A.M.", title:"The Traveler",'''
+new=r'''dx1:{
+time:"8:42 A.M.", title:"Working Diagnosis",
 html:`
-<div class="eyebrow">Unofficial · Noncommercial · Classroom Exercise</div>
-<h1>THE PITT:<br>EXPOSURE</h1>
-<p class="deck">You are a medical student beginning a shift at Pittsburgh Trauma Medical Center. As the morning unfolds, you will decide what to investigate, whose perspective to follow, and what information deserves your attention.</p>
-<p>There are no “correct” choices. You will not see a score while you play. Your decisions determine which parts of the episode become most visible to you.</p>
-<p class="disclaimer">This is an unofficial educational fanfiction inspired by <em>The Pitt</em>. All events and dialogue in this exercise are invented for classroom use.</p>`,
-next:"s1",button:"BEGIN SHIFT"
-},
-s1:{
-time:"7:14 A.M.", title:"Something Doesn't Fit",
-html:`
-<p>Forty-three minutes into your shift, you have already lost your pen, been corrected twice, and learned that the emergency department has at least six different meanings for the phrase <em>I'll be right back.</em> Your job is mostly to learn, help when someone asks, and stay out of the way when things get complicated.</p>
-<div class="character">DR. MICHAEL “ROBBY” ROBINAVITCH <span>· attending physician, running the ED shift</span></div>
-<p>Across the department, Robby looks up from the tracking board and asks where Whitaker is. You point toward one of the treatment bays. Dr. Whitaker, one of the younger residents, is standing beside a stretcher with a college student named Evan Cole, twenty-two, who has a temperature of 103.1, severe headache, vomiting, and increasing confusion.</p>
-<p>Robby walks over, and you follow. Whitaker has barely started presenting the case when a nurse interrupts him. Another college-aged patient has just arrived with fever, vomiting, and a severe headache.</p>
-<p class="dialogue">“That's my roommate,” Evan manages to say from the first stretcher.</p>
-<p>Whitaker looks at Robby. “Okay. That's interesting.”</p>
-<p>“It's two patients,” Robby says.</p>
-<p>“Two roommates with the same symptoms.”</p>
-<p>Robby turns to you. “Go find out what connects them.”</p>`,
-prompt:"What do you want to know first?",
+<p>You have three young adults with fever, severe headache, vomiting, and varying degrees of confusion. They know one another, but at this point you still do not know whether you are looking at one illness or several.</p>
+<div class="dx-panel"><h3>YOUR WORKING THEORY</h3><p>Choose the explanation you would keep highest on your differential right now. You can revise it later.</p></div>`,
+prompt:"What is your working diagnosis?",
 choices:[
- ["A","What symptoms do they have in common?",{AUTHORITY:1},"s2","symptoms"],
- ["B","Where have they both been recently?",{BOUNDARY:1},"s2","places"],
- ["C","Which one became sick first?",{ORIGIN:1},"s2","timeline"]
+ ["A","Foodborne illness / gastroenteritis",{},"s5","dx-food"],
+ ["B","Influenza, COVID, or another viral infection",{},"s5","dx-viral"],
+ ["C","Meningitis or another infection involving the central nervous system",{},"s5","dx-meningitis"],
+ ["D","Toxic or environmental exposure",{},"s5","dx-toxic"],
+ ["E","Not enough information yet",{},"s5","dx-unknown"]
 ]
-},
-s2:{
-time:"7:32 A.M.", title:"Two Patients",
-html:`
-<p>You get pieces rather than an explanation. Evan started feeling sick late last night. His roommate, Marcus, says he felt “off” sometime yesterday afternoon but didn't think much of it. Both went to the same off-campus party Friday night, but so did a few hundred other people. Both ate at the same dining hall last week, along with several thousand students. And, obviously, they share an apartment.</p>
-<p>When you report this to Robby, he listens without interrupting.</p>
-<p>“So what do they have?” you ask.</p>
-<p>“I don't know.” When you keep waiting, he adds, “There isn't a prize for diagnosing it before we have enough information. Keep going.”</p>
-<p>Marcus, who has been listening with his eyes closed, speaks from the bed. “Evan works at the airport.” Whitaker looks over. “At the airport?” Marcus nods. “Weekends.”</p>`,
-next:"s3",button:"KEEP GOING",
-onEnter(){
- addKnown("Both attended the same off-campus party Friday.");
- addReported("Evan works weekends at Pittsburgh International Airport.");
-}
-},
-s3:{
-time:"7:46 A.M.", title:"The Airport",
-html:`
-<p>Evan works Saturdays and Sundays assisting passengers at Pittsburgh International Airport. Thousands of people move through his terminal, and yesterday he worked most of his shift despite developing what he thought was a mild headache. He eventually went home early.</p>
-<div class="character">DANA EVANS <span>· charge nurse, keeps the department functioning</span></div>
-<p>Dana appears beside you while you're explaining this. If Robby seems to know every medical problem in the department, Dana seems to know everything else.</p>
-<p>“What've we got?”</p>
-<p>“Two roommates. Fever, headache, vomiting, confusion. One works at the airport.”</p>
-<p>Dana looks at you for a moment. “You said that last part like it means something.”</p>
-<p>You realize you did.</p>`,
-prompt:"What about the airport detail seems most important?",
-choices:[
- ["A","Evan comes into contact with travelers from all over the world.",{BOUNDARY:2},"s4","travelers"],
- ["B","Evan kept working after he started feeling sick.",{BLAME:2},"s4","worked-sick"],
- ["C","We don't know whether the airport has anything to do with this. Do their clinical presentations actually match?",{AUTHORITY:2},"s4","clinical-match"],
- ["D","Marcus doesn't work at the airport. What does his timeline look like?",{ORIGIN:1,WITNESS:1},"s4","marcus"]
-]
-},
-s4:{
-time:"8:21 A.M.", title:"Three",
-html:`
-<p>The third patient arrives less than forty minutes later. Nia Brooks is twenty-one, with a higher fever, vomiting, and severe sensitivity to the fluorescent lights. When a nurse asks whether she knows Evan or Marcus, she recognizes Evan's name and says she saw him at a party Friday.</p>
-<p>The same party.</p>
-<p>Someone pulls the curtain and someone else starts making calls. Nobody on the team says <em>outbreak</em>, but a few minutes later you hear a patient's mother use the word in the waiting area. Her daughter asks who told her. “I heard someone,” she says.</p>
-<p>Dana passes you carrying a stack of supplies. “Don't stand there looking fascinated. Be useful.”</p>`,
-prompt:"Where do you go?",
-choices:[
- ["A","Stay with Nia. She's frightened, sick, and alone.",{CARE:2,WITNESS:1},"s4a","nia"],
- ["B","Find Robby. You want to know what he thinks is happening.",{AUTHORITY:2},"s4b","robby"],
- ["C","Listen to what's happening in the waiting room.",{WITNESS:2},"s4c","waiting-room"]
-],
-onEnter(){
- addKnown("Nia attended the same Friday party.");
- addUnconfirmed("The Friday party is the common exposure.");
-}
-},
-s4a:{
-time:"8:36 A.M.", title:"Nia",
-html:`
-<p>Nia asks whether she's going to die. You tell her the team is taking care of her, which sounds inadequate even while you're saying it.</p>
-<p>“My mom's driving here,” she says. “Don't tell her it's meningitis or anything. She'll lose it.”</p>
-<p>Nobody has said meningitis. You tell her you don't know yet.</p>
-<p>“That's worse,” she says, and closes her eyes.</p>`,
-next:"s5",button:"RETURN TO THE DEPARTMENT"
-},
-s4b:{
-time:"8:36 A.M.", title:"Robby",
-html:`
-<p>You find Robby studying the tracking board and ask whether this is an outbreak.</p>
-<p>“Maybe.”</p>
-<p>“What do you think it is?”</p>
-<p>“I think we have three sick people.”</p>
-<p>You point out that they're connected. Robby agrees that they probably are, then stops you as you try to turn that into a diagnosis. “You're trying to get to the end of the story before we have the middle.” His pager goes off before you can ask anything else.</p>`,
-next:"s5",button:"KEEP GOING"
-},
-s4c:{
-time:"8:36 A.M.", title:"The Waiting Room",
-html:`
-<p>In the waiting room, the story is already changing. Three patients have become five. The airport has become “some flight.” Someone says all the sick students ate at the same restaurant, and someone else says the hospital has locked down an entire section.</p>
-<p>None of that is true, at least not as stated. But everyone telling it seems to believe some version of it.</p>`,
-next:"s5",button:"RETURN TO THE DEPARTMENT"
 },
 s5:{
-time:"8:53 A.M.", title:"The Traveler",
+time:"8:53 A.M.", title:"The Traveler",'''
+s=s.replace(old,new,1)
+
+# Redirect three branch continuations to dx1
+s=s.replace('''next:"s5",button:"RETURN TO THE DEPARTMENT"''','''next:"dx1",button:"RETURN TO THE DEPARTMENT"''',1)
+s=s.replace('''next:"s5",button:"KEEP GOING"''','''next:"dx1",button:"KEEP GOING"''',1)
+s=s.replace('''next:"s5",button:"RETURN TO THE DEPARTMENT"''','''next:"dx1",button:"RETURN TO THE DEPARTMENT"''',1)
+
+# Add investigation scene after traveler choice: redirect s5 choices to investigate1
+for target in ['traveler-origin','find-traveler','contact','assumption']:
+    s=s.replace(f'''"s6","{target}"''',f'''"investigate1","{target}"''',1)
+
+# Add investigation scene before s6.
+old='''s6:{
+time:"9:31 A.M.", title:"Precautions",'''
+new=r'''investigate1:{
+time:"9:07 A.M.", title:"One More Thing",
 html:`
-<p>Whitaker finds you with a new detail. On Sunday afternoon, Evan helped a passenger near baggage claim who had collapsed. The passenger was vomiting, disoriented, and barely able to stand. Evan stayed with him until paramedics arrived.</p>
-<p>“Do we know what happened to him?” you ask.</p>
-<p>“Not yet.”</p>
-<p>Someone nearby repeats the new information: “Evan was exposed to a sick traveler?” The phrasing catches on quickly. A sick traveler, an airport worker, a college party, and three sick students now form a plausible sequence, even though several parts of it are still unknown.</p>`,
-prompt:"What do you most want to know?",
+<p>Robby wants you back in a few minutes. Before you go, you have time to follow up on one part of the case. You will not have time to check everything.</p>
+<div class="artifact notice"><div class="artifact-label">INVESTIGATION</div><strong>Choose one source of additional information.</strong></div>`,
+prompt:"What do you check?",
 choices:[
- ["A","Where had the traveler come from?",{ORIGIN:2,BOUNDARY:1},"s6","traveler-origin"],
- ["B","Can we find the traveler and determine whether he's sick with the same thing?",{ORIGIN:1,AUTHORITY:1},"s6","find-traveler"],
- ["C","How much actual contact did Evan have with him?",{BOUNDARY:2},"s6","contact"],
- ["D","Why are we assuming the traveler matters?",{AUTHORITY:1,WITNESS:1},"s6","assumption"]
-],
-onEnter(){
- addReported("On Sunday, Evan assisted a vomiting, disoriented traveler at the airport.");
- addUnconfirmed("The sick traveler infected Evan.");
-}
+ ["A","The first round of laboratory results.",{},"clueLabs","inv-labs"],
+ ["B","Talk to Nia again about when her symptoms began.",{},"clueInterview","inv-interview"],
+ ["C","Build a timeline of the three students' last 72 hours.",{},"clueTimeline","inv-timeline"],
+ ["D","Take a closer exposure history from Evan.",{},"clueExposure","inv-exposure"]
+]
+},
+clueLabs:{
+time:"9:12 A.M.",title:"Laboratory Results",
+html:`
+<div class="clue"><h3>What you find</h3>
+<div class="labgrid"><div><strong>WBC</strong> 18.6 K/µL ↑</div><div><strong>Neutrophils</strong> elevated</div><div><strong>Lactate</strong> 3.1 mmol/L ↑</div><div><strong>Platelets</strong> mildly low</div></div>
+<p class="small">These results suggest a significant systemic infection but do not identify the organism or source.</p></div>
+<p>Whitaker points out that the results make simple food poisoning less satisfying as an explanation, but they still leave a broad differential.</p>`,
+next:"s6",button:"BACK TO THE DEPARTMENT",
+onEnter(){ addKnown("Early labs suggest a significant systemic infection."); }
+},
+clueInterview:{
+time:"9:12 A.M.",title:"Patient Interview",
+html:`
+<div class="clue"><h3>What Nia tells you</h3>
+<p>Nia says the headache began Saturday evening while she was at work. She initially blamed dehydration and went home early. By Sunday morning, bright light was painful and she had started vomiting.</p></div>
+<p>You write down the times. Nia's symptoms may have begun earlier than the other students', although symptom onset does not necessarily tell you who was infected first.</p>`,
+next:"s6",button:"BACK TO THE DEPARTMENT",
+onEnter(){ addKnown("Nia reports headache beginning Saturday evening."); }
+},
+clueTimeline:{
+time:"9:12 A.M.",title:"Timeline",
+html:`
+<div class="clue"><h3>What the timeline shows</h3>
+<p><strong>Friday night:</strong> Evan, Marcus, and Nia attend the same crowded off-campus party.<br><strong>Saturday evening:</strong> Nia leaves work early with a severe headache.<br><strong>Sunday afternoon:</strong> Evan assists a sick traveler at the airport.<br><strong>Sunday evening:</strong> Marcus feels “off”; Evan later develops a headache.</p></div>
+<p>The sequence does not tell you the source of the illness, but it creates a problem for any theory in which Sunday's traveler caused Nia's illness.</p>`,
+next:"s6",button:"BACK TO THE DEPARTMENT",
+onEnter(){ addKnown("Nia's headache may have begun before Evan's Sunday airport encounter."); }
+},
+clueExposure:{
+time:"9:12 A.M.",title:"Exposure History",
+html:`
+<div class="clue"><h3>What Evan tells you</h3>
+<p>The sick traveler vomited nearby, but Evan says he did not have prolonged face-to-face contact with him. Evan wore gloves while helping and did not handle vomit directly. He cannot remember the passenger coughing.</p></div>
+<p>The encounter is memorable, but “sick traveler” does not by itself establish a meaningful route of transmission.</p>`,
+next:"s6",button:"BACK TO THE DEPARTMENT",
+onEnter(){ addKnown("Evan's contact with the sick traveler was brief."); }
 },
 s6:{
-time:"9:31 A.M.", title:"Precautions",
+time:"9:31 A.M.", title:"Precautions",'''
+s=s.replace(old,new,1)
+
+# Make s6 less diagnostic-announcing, and add explicit rash clue.
+s=s.replace('''<p>The clinical picture is becoming more concerning for meningococcal disease, and precautions intensify while testing continues.</p>''',
+'''<p>Whitaker points out that the combination of high fever, severe headache, altered mental status, and a new <span class="term" title="A petechial or purpuric rash consists of small red-purple spots caused by bleeding under the skin. In a very ill patient with fever, it can be an important clue.">petechial/purpuric rash</span> makes an invasive bacterial infection much harder to ignore. Precautions intensify while testing continues.</p>''',1)
+s=s.replace(''' addReported("The clinical team is considering meningococcal disease.");''',
+''' addReported("Marcus has fever, severe headache, confusion, and a petechial/purpuric rash.");''',1)
+
+# Redirect s6 choices to dx2 instead of s7
+for key in ['hospital-exposure','nia-alone','mother','photo']:
+    s=s.replace(f'''"s7","{key}"''',f'''"dx2","{key}"''',1)
+
+# Insert dx2 and confirm scene before s7.
+old='''s7:{
+time:"10:04 A.M.", title:"A Story Appears",'''
+new=r'''dx2:{
+time:"9:44 A.M.", title:"Revise Your Differential",
 html:`
-<p>Things begin moving quickly. Infection Prevention is called. The team orders cultures, lumbar punctures, and antibiotics. Masks and gowns appear, and doors that had been open are now closed. A fourth student arrives with fever and severe headache; he was also at the Friday party. Then a nurse notices a reddish-purple rash on Marcus.</p>
-<p>The clinical picture is becoming more concerning for meningococcal disease, and precautions intensify while testing continues.</p>
-<p>Nia's mother arrives and is told she cannot immediately enter her daughter's room. “She's twenty-one years old,” she says. “She called me crying.” Across the hallway, a staff member pulls on protective equipment while a patient in the waiting room raises his phone and takes a photograph.</p>
-<p>Dana sees him. “Sir, put the phone down.”</p>`,
-prompt:"What concerns you most right now?",
+<p>Marcus's rash changes the problem. You now have multiple linked young adults with high fever and severe headache, at least one with confusion, and one with a new non-blanching red-purple rash.</p>
+<div class="dx-panel"><h3>YOUR WORKING THEORY</h3><p>Your earlier theory is still in your notes. Revise it if the new evidence changes your thinking.</p></div>`,
+prompt:"What is your working diagnosis now?",
 choices:[
- ["A","Preventing additional exposure inside the hospital.",{BOUNDARY:2},"s7","hospital-exposure"],
- ["B","Nia is behind that door without anyone she knows.",{CARE:2},"s7","nia-alone"],
- ["C","Her mother is being excluded at the moment her daughter may be seriously ill.",{CARE:1,WITNESS:2},"s7","mother"],
- ["D","That photograph may leave the hospital before any accurate explanation does.",{AUTHORITY:1,WITNESS:1},"s7","photo"]
-],
+ ["A","Foodborne illness / gastroenteritis",{},"dxReveal","dx2-food"],
+ ["B","Influenza, COVID, or another viral infection",{},"dxReveal","dx2-viral"],
+ ["C","Meningitis / meningococcal disease",{},"dxReveal","dx2-meningitis"],
+ ["D","Toxic or environmental exposure",{},"dxReveal","dx2-toxic"],
+ ["E","Still not enough information",{},"dxReveal","dx2-unknown"]
+]
+},
+dxReveal:{
+time:"9:52 A.M.",title:"A Diagnosis, Not an Explanation",
+html:`
+<p>The first cerebrospinal-fluid results return. The pattern is strongly consistent with <strong>acute bacterial meningitis</strong>, and the rash plus the emerging cluster makes <strong>meningococcal disease</strong> the leading concern. Treatment and prophylaxis planning proceed without waiting for every confirmatory result.</p>
+<div class="mystery-banner"><strong>You have a working diagnosis.</strong>You still do not have an explanation for why these particular people are sick, how the cases are connected, or where the chain began.</div>
+<p>That distinction matters. Identifying the disease narrows one mystery while leaving another one open.</p>`,
+next:"s7",button:"FOLLOW THE TRANSMISSION QUESTION",
 onEnter(){
- addKnown("A fourth sick student also attended the Friday party.");
- addReported("Marcus has developed a concerning rash.");
- addReported("The clinical team is considering meningococcal disease.");
+ addKnown("CSF findings are strongly consistent with acute bacterial meningitis.");
+ addReported("Meningococcal disease is now the leading clinical concern.");
 }
 },
 s7:{
-time:"10:04 A.M.", title:"A Story Appears",
-html:`
-<p>Preliminary testing is not definitive, but someone has started drawing a timeline on a whiteboard. The first version doesn't work: the Friday party happened before Evan encountered the sick traveler on Sunday. Someone points out that Evan works at the airport every weekend, so the diagram is revised around an earlier, unspecified exposure.</p>
-<div class="diagram">AIRPORT EXPOSURE ?
-        ↓
-      EVAN
-     ↙    ↘
- MARCUS   FRIDAY PARTY
-             ↓
-         OTHER CASES</div>
-<p>The diagram is not proven, but it is coherent. Evan connects the airport, a shared apartment, and the party. A resident studying the board says, “If this holds, he's our index case.”</p>
-<p>For the first time all morning, the cases seem to have a shape.</p>`,
-prompt:"If Evan is the index case, what should happen next?",
-choices:[
- ["A","Identify everyone Evan had close contact with.",{BOUNDARY:2},"s8","trace-evan"],
- ["B","Find the sick traveler. That's probably where this started.",{ORIGIN:2},"s8","traveler-source"],
- ["C","Find out exactly when Evan first felt sick and whether he knowingly exposed other people.",{BLAME:2,ORIGIN:1},"s8","evan-responsibility"],
- ["D","Warn everyone at Friday's party immediately.",{CARE:1,BOUNDARY:1},"s8","warn-party"]
-],
-onEnter(){
- replaceUnconfirmed("The sick traveler infected Evan.","Evan is the index case connecting the airport to the student cluster.");
-}
-},
-s8:{
-time:"10:22 A.M.", title:"Evan",
-html:`
-<p>You pass Evan's room while a nurse is adjusting his IV. He sees you and asks you to come closer.</p>
-<p>“Did I give this to them?”</p>
-<p>You tell him you don't know.</p>
-<p>“Marcus. Nia. Did they get it from me?” He pauses. “That's what everyone's saying.”</p>
-<p>You tell him the team is still working out the timeline.</p>
-<p>“I shouldn't have gone to work yesterday. I knew I felt like crap.”</p>
-<p>Through the glass, the whiteboard is visible in the work area. Evan's name is still in the center of it.</p>`,
-next:"s9",button:"CONTINUE"
-},
-s9:{
-time:"10:48 A.M.", title:"The Story Escapes",
-html:`
-<p>Dana brings a phone over to Robby. A local social-media account has posted the photograph from the waiting room.</p>
-<div class="artifact">
-<div class="artifact-label">LOCAL FEED · 11 MINUTES AGO</div>
-<div class="post"><strong>BREAKING: POSSIBLE INFECTIOUS OUTBREAK AT PITTSBURGH TRAUMA. SOURCES SAY CASES MAY BE LINKED TO PITTSBURGH INTERNATIONAL AIRPORT.</strong>
-<div class="comments">AIRPORT OUTBREAK???<br><br>what flight<br><br>my sister is literally flying today wtf<br><br>WHY ISN'T THE HOSPITAL SAYING ANYTHING<br><br>close the airport<br><br>heard an airport employee came to work sick and spread it</div></div>
-</div>
-<p>The post does not use Evan's name, but you know exactly who the last comment means.</p>`,
-prompt:"Which part of the post bothers you most?",
-choices:[
- ["A","“Outbreak.” We still don't know whether every case is part of one event.",{AUTHORITY:2},"s10","word-outbreak"],
- ["B","“Linked.” It makes a hypothesis sound like an established causal chain.",{ORIGIN:1,AUTHORITY:1},"s10","word-linked"],
- ["C","“Airport.” Suddenly the danger has a location and an implied direction of travel.",{BOUNDARY:2},"s10","word-airport"],
- ["D","The claim that the employee “spread it.” Someone has already become responsible.",{BLAME:2,WITNESS:1},"s10","word-spread"]
-]
-},
-s10:{
-time:"11:26 A.M.", title:"The Timeline Doesn't Work",
-html:`
-<p>Nia's roommate arrives and is brought back to answer questions. When someone asks when Nia first started feeling sick, she says Saturday night. Nia had left work early because of a severe headache and sensitivity to light.</p>
-<p>Saturday is before Evan's encounter with the sick traveler on Sunday. It is also before Evan says he first felt ill.</p>
-<p>Another update arrives: the traveler from the airport has been located and evaluated, and his illness appears unrelated to the students' illness.</p>
-<div class="diagram">SICK TRAVELER  <s>→ EVAN</s>
+time:"10:04 A.M.", title:"A Story Appears",'''
+s=s.replace(old,new,1)
 
-NIA: symptoms Saturday night
-EVAN: symptoms Sunday night
-
-FRIDAY PARTY: still a possible connection</div>
-<p>Robby looks at the revised timeline. “We're telling this backward.” The clinical problem has not changed: the patients are still sick and the team still has to identify close contacts and treat the people in front of them. What has changed is the explanation that had begun to organize the morning.</p>`,
-prompt:"What did we mistake for evidence?",
-choices:[
- ["A","The most memorable detail. A sick traveler was too compelling to ignore.",{ORIGIN:1,BOUNDARY:1},"s11","memorable"],
- ["B","The first patient whose story we could easily connect to the others.",{ORIGIN:2},"s11","first-connected"],
- ["C","A plausible chain of transmission for a demonstrated chain of transmission.",{AUTHORITY:2},"s11","plausible-chain"],
- ["D","A sick person for a responsible person.",{BLAME:1,CARE:1},"s11","sick-responsible"]
-],
-onEnter(){
- removeUnconfirmed("Evan is the index case connecting the airport to the student cluster.");
- addKnown("Nia developed symptoms before Evan.");
- addKnown("The airport traveler's illness appears unrelated.");
- addUnconfirmed("The Friday party is the source of the cluster.");
-}
-},
-s11:{
-time:"12:03 P.M.", title:"The Outbreak Continues",
-html:`
-<p>Public health officials are now involved. Several students are being treated for suspected meningococcal disease, and close contacts are being identified for preventive antibiotics. The Friday party may matter. The shared apartment may matter. Another connection may not have been discovered yet.</p>
-<p>There is no neat diagram anymore. You have five minutes before you're expected somewhere else, enough time to hear one more person's account of the morning.</p>`,
-prompt:"Whose story do you choose?",
-choices:[
- ["A","Nia's.",{CARE:2,WITNESS:1},"endNia","final-nia"],
- ["B","Evan's.",{BLAME:1,CARE:1,WITNESS:1},"endEvan","final-evan"],
- ["C","Nia's mother, still waiting nearby.",{CARE:1,WITNESS:2},"endMother","final-mother"],
- ["D","Dana's.",{AUTHORITY:1,CARE:1},"endDana","final-dana"],
- ["E","Robby's.",{AUTHORITY:2},"endRobby","final-robby"]
-]
-},
-endNia:{
-time:"12:08 P.M.", title:"Nia",
-html:`<p>Nia is exhausted but awake. Her mother has finally been allowed in wearing protective equipment, and she is holding Nia's hand.</p><p>“Did you figure it out?” Nia asks.</p><p>“Not completely.”</p><p>She nods. “Okay.” Her mother tightens her grip on Nia's hand. The question of where the outbreak began feels less urgent in this room than it did at the whiteboard.</p>`,
-next:"results",button:"END SHIFT",finalPOV:"Nia"
-},
-endEvan:{
-time:"12:08 P.M.", title:"Evan",
-html:`<p>Someone has closed the curtain, so the whiteboard is no longer visible from Evan's bed.</p><p>“Did they find the airport guy?” he asks.</p><p>You tell him they did and that his illness appears unrelated.</p><p>“So I'm not patient zero.”</p><p>You tell him the team still doesn't know exactly how everyone was infected, but no, the airport encounter did not start the cluster.</p><p>He closes his eyes for a moment. Then he asks, “Is Marcus okay?”</p>`,
-next:"results",button:"END SHIFT",finalPOV:"Evan"
-},
-endMother:{
-time:"12:08 P.M.", title:"Nia's Mother",
-html:`<p>Nia's mother is watching through the glass. “They keep telling me she's stable.”</p><p>“She is.”</p><p>“What does stable mean?”</p><p>You begin with the medical answer, then realize that isn't quite what she is asking. She wants to know whether her daughter is going to be all right, and you cannot promise that yet.</p><p>“Can she hear me?”</p><p>“Yes.”</p><p>She moves closer to the glass and raises her hand. Inside, Nia raises hers.</p>`,
-next:"results",button:"END SHIFT",finalPOV:"Nia's mother"
-},
-endDana:{
-time:"12:08 P.M.", title:"Dana",
-html:`<p>Dana is at the desk, still coordinating patients, staff, families, Infection Prevention, security, administration, and now public health.</p><p>“How many people have you talked to today?” you ask.</p><p>She gives you a suspicious look. “Is this for something?”</p><p>“No.”</p><p>She starts counting, gives up, and tells you to get where you're supposed to be. The department has spent the morning trying to trace contacts among patients; Dana has been managing a different network of contact the entire time.</p>`,
-next:"results",button:"END SHIFT",finalPOV:"Dana"
-},
-endRobby:{
-time:"12:08 P.M.", title:"Robby",
-html:`<p>Robby is looking at the tracking board again. You ask what he thinks happened.</p><p>“I don't know yet.”</p><p>Five hours ago, that answer frustrated you. Now it sounds more useful.</p><p>“What do you do when you don't know?”</p><p>“Keep treating the patient. Keep finding out.” His pager goes off. He looks at you. “You're supposed to be somewhere.”</p>`,
-next:"results",button:"END SHIFT",finalPOV:"Robby"
-}
-};
-
-const descriptions = {
-ORIGIN:{
- title:"ORIGIN",
- body:"Your version of the episode repeatedly returned to beginnings, sequence, and causal chains: who became sick first, where an infection might have entered a community, and how one event could lead to another. That attention can clarify a timeline, but it can also make a clean beginning feel necessary before the evidence supports one."
-},
-BOUNDARY:{
- title:"BOUNDARY",
- body:"Your version repeatedly emphasized exposure, movement, separation, and containment: who contacted whom, where danger might be located, and how it could be kept from moving farther. Those questions matter clinically, but they also organize people and places as inside or outside, protected or exposed."
-},
-AUTHORITY:{
- title:"AUTHORITY",
- body:"Your version repeatedly emphasized evidence and expertise: what the clinical findings support, what can legitimately be claimed, and whose knowledge can resolve uncertainty. That caution can prevent speculation from hardening into fact, while also making institutional and professional voices especially central."
-},
-BLAME:{
- title:"RESPONSIBILITY",
- body:"Your version repeatedly noticed decisions that might make someone responsible: working while ill, exposing others, or failing to recognize risk. Responsibility can matter during contagion, but the episode also shows how quickly a sick person can become a carrier, a cause, and then a culprit."
-},
-CARE:{
- title:"CARE",
- body:"Your version repeatedly emphasized suffering, relationships, and obligation: who was frightened, who was alone, and what people owed one another. That perspective reveals dimensions of an outbreak that a transmission diagram cannot, while sometimes drawing attention away from source and mechanism."
-},
-WITNESS:{
- title:"WITNESS",
- body:"Your version repeatedly moved toward perspectives that could remain peripheral: patients, families, and people watching events unfold. You treated the outbreak as something experienced differently depending on where a person stood, raising the question of whose experience gets included in the story of an epidemic."
-}
-};
-
-function addKnown(x){ if(!state.notes.known.includes(x)) state.notes.known.push(x); }
-function addReported(x){ if(!state.notes.reported.includes(x)) state.notes.reported.push(x); }
-function addUnconfirmed(x){ if(!state.notes.unconfirmed.includes(x)) state.notes.unconfirmed.push(x); }
-function removeUnconfirmed(x){ state.notes.unconfirmed=state.notes.unconfirmed.filter(n=>n!==x); }
-function replaceUnconfirmed(a,b){ removeUnconfirmed(a); addUnconfirmed(b); }
-
-function updateNotes(){
-  const fill=(id,arr)=>{
-    document.getElementById(id).innerHTML=arr.length?arr.map(x=>`<li>${x}</li>`).join(""):"<li class='small'>None recorded.</li>";
-  };
-  fill("knownNotes",state.notes.known);
-  fill("reportedNotes",state.notes.reported);
-  fill("unconfirmedNotes",state.notes.unconfirmed);
-}
-
-function openNotes(){
-  updateNotes();
-  drawer.classList.add("open"); drawer.setAttribute("aria-hidden","false"); scrim.classList.remove("hidden");
-}
-function closeNotes(){
-  drawer.classList.remove("open"); drawer.setAttribute("aria-hidden","true"); scrim.classList.add("hidden");
-}
-const drawer=document.getElementById("drawer"),scrim=document.getElementById("scrim");
-document.getElementById("notesBtn").onclick=openNotes;
-document.getElementById("closeNotes").onclick=closeNotes;
-scrim.onclick=closeNotes;
-
-function record(label,text,scores,key){
+# Add diagnosis handling to record()
+old='''function record(label,text,scores,key){
   Object.entries(scores||{}).forEach(([k,v])=>state.scores[k]+=v);
   state.choices.push({label,text,key});
-}
-
-function render(id){
-  closeNotes();
-  if(id==="results"){ renderResults(); return; }
-  const s=scenes[id];
-  if(s.onEnter) s.onEnter();
-  if(s.finalPOV) state.finalPOV=s.finalPOV;
-  const game=document.getElementById("game");
-  let out="";
-  if(s.time) out+=`<div class="timestamp">${s.time}</div><div class="location">PITTSBURGH TRAUMA MEDICAL CENTER · EMERGENCY DEPARTMENT</div>`;
-  if(s.title) out+=`<h2>${s.title}</h2>`;
-  out+=s.html||"";
-  if(s.prompt){
-    out+=`<div class="prompt">${s.prompt}</div><div class="choices">`;
-    s.choices.forEach((c,i)=>{
-      out+=`<button class="choice" data-i="${i}"><b>${c[0]}</b>${c[1]}</button>`;
-    });
-    out+="</div>";
-  } else if(s.next){
-    out+=`<button class="continue" id="continueBtn">${s.button||"CONTINUE"}</button>`;
+}'''
+new=r'''function record(label,text,scores,key){
+  Object.entries(scores||{}).forEach(([k,v])=>state.scores[k]+=v);
+  const dxMap={
+    "dx-food":"Foodborne illness / gastroenteritis",
+    "dx-viral":"Influenza, COVID, or another viral infection",
+    "dx-meningitis":"Meningitis / CNS infection",
+    "dx-toxic":"Toxic or environmental exposure",
+    "dx-unknown":"Not enough information yet",
+    "dx2-food":"Foodborne illness / gastroenteritis",
+    "dx2-viral":"Influenza, COVID, or another viral infection",
+    "dx2-meningitis":"Meningitis / meningococcal disease",
+    "dx2-toxic":"Toxic or environmental exposure",
+    "dx2-unknown":"Not enough information yet"
+  };
+  if(dxMap[key]){
+    state.diagnosis=dxMap[key];
+    state.dxHistory.push({key,diagnosis:state.diagnosis});
   }
-  game.className="card fade";
-  game.innerHTML=out;
-  window.scrollTo({top:0,behavior:"smooth"});
-  if(s.prompt){
-    game.querySelectorAll(".choice").forEach(btn=>{
-      btn.onclick=()=>{
-        const c=s.choices[Number(btn.dataset.i)];
-        record(c[0],c[1],c[2],c[4]);
-        render(c[3]);
-      };
-    });
-  } else if(s.next){
-    document.getElementById("continueBtn").onclick=()=>render(s.next);
+  if(key && key.startsWith("inv-")) state.investigations.push(key);
+  state.choices.push({label,text,key});
+}'''
+s=s.replace(old,new,1)
+
+# Update drawer diagnosis
+s=s.replace('''  fill("unconfirmedNotes",state.notes.unconfirmed);
+}''','''  fill("unconfirmedNotes",state.notes.unconfirmed);
+  document.getElementById("dxNote").textContent=state.diagnosis;
+}''',1)
+
+# Enhance results with diagnosis trajectory.
+needle='''    <h3>Where your episode ended</h3>'''
+diag=r'''    <h3>The diagnostic mystery</h3>
+    <p>${diagnosisResult()}</p>
+    <p>The game separated two questions that often collapse into one another: <strong>What disease is this?</strong> and <strong>What story explains how it got here?</strong> The first became increasingly answerable. The second remained much less certain.</p>
+
+'''
+s=s.replace(needle,diag+needle,1)
+
+# Add diagnosisResult helper before renderResults.
+needle='''function renderResults(){'''
+helper=r'''function diagnosisResult(){
+  const h=state.dxHistory;
+  if(!h.length) return "You did not record a working diagnosis.";
+  const first=h[0]?.diagnosis, last=h[h.length-1]?.diagnosis;
+  const got=last && last.includes("Meningitis");
+  if(got && first && first.includes("Meningitis")){
+    return `You suspected <strong>${first}</strong> early and kept that diagnosis as the clinical evidence accumulated.`;
   }
+  if(got){
+    return `You began with <strong>${first}</strong> and revised your working diagnosis to <strong>${last}</strong> as new evidence appeared.`;
+  }
+  return `Your final working theory was <strong>${last}</strong>. The subsequent CSF findings and clinical pattern shifted the team's leading diagnosis toward meningococcal disease.`;
 }
 
-function renderResults(){
-  const sorted=Object.entries(state.scores).sort((a,b)=>b[1]-a[1]);
-  const primary=sorted[0][0], secondary=sorted[1][0];
-  const p=descriptions[primary], s=descriptions[secondary];
-  const game=document.getElementById("game");
-  game.className="card fade result";
-  game.innerHTML=`
-    <div class="result-kicker">Shift complete</div>
-    <h1>Your Version of the Outbreak</h1>
-    <p>Throughout the episode, you made decisions about what counted as a clue, whose knowledge you sought, where you located danger, and whose experience you followed. Those decisions shaped the story you encountered.</p>
+'''
+s=s.replace(needle,helper+needle,1)
 
-    <div class="profile">
-      <div class="result-kicker">Primary narrative frame</div>
-      <h3>${p.title}</h3>
-      <p>${p.body}</p>
-    </div>
+# Version marker/title
+s=s.replace('<title>The Pitt: Exposure — An Interactive Episode</title>',
+            '<title>The Pitt: Exposure — Diagnostic Mystery Edition</title>',1)
 
-    <div class="profile">
-      <div class="result-kicker">Secondary narrative frame</div>
-      <h3>${s.title}</h3>
-      <p>${s.body}</p>
-    </div>
-
-    <h3>Where your episode ended</h3>
-    <p>You chose to spend the final minutes with <strong>${state.finalPOV||"another person in the department"}</strong>. That choice does not change the outbreak itself, but it changes whose experience supplies the ending.</p>
-
-    <h3>Look again at 10:04 A.M.</h3>
-    <p>The episode offered a coherent explanation in which Evan connected the airport, the apartment, the party, and the other cases. The explanation had a beginning, a carrier, a direction, and a person at its center. It was also unsupported by the timeline.</p>
-    <p>You did not construct that explanation alone. The interface selected which facts appeared, when they appeared, whose accounts were available, and which actions you could choose. You chose a path through information that had already been organized for you.</p>
-
-    <details>
-      <summary><strong>Review the choices you made</strong></summary>
-      <ol class="choice-log">${state.choices.map(c=>`<li>${c.text}</li>`).join("")}</ol>
-    </details>
-
-    <div class="debrief">
-      <div class="result-kicker">One more contagion story</div>
-      <h2>Return to Whit Taylor's <em>Together, But Mostly Apart</em>.</h2>
-      <p>This interactive episode organized contagion around accumulating cases, evidence, causal explanation, medical authority, and decisions about what should happen next.</p>
-      <p><strong>What does Taylor's comic refuse from the contagion story you just experienced?</strong></p>
-      <p><strong>What does she put at the center instead?</strong></p>
-      <p>Then return to the question from the narrative unit: <strong>What can a comic make visible about living through contagion that this interactive episode could not?</strong></p>
-    </div>
-
-    <p class="disclaimer">For classroom discussion only. This fictional scenario is designed to explore narrative framing, not to teach clinical decision-making. <button class="reset" id="resetBtn">Restart the episode</button></p>
-  `;
-  window.scrollTo({top:0,behavior:"smooth"});
-  document.getElementById("resetBtn").onclick=()=>location.reload();
-}
-
-render("intro");
-</script>
-</body>
-</html>'''
-
-path = Path("/mnt/data/index.html")
-path.write_text(html, encoding="utf-8")
-print(f"Created {path} ({path.stat().st_size:,} bytes)")
+out=Path("/mnt/data/thepitt-mystery-index.html")
+out.write_text(s,encoding="utf-8")
+print(f"Created {out} ({out.stat().st_size:,} bytes)")
